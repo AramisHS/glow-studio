@@ -1,6 +1,5 @@
 import { MapPin, Clock, Instagram, Facebook, Navigation } from 'lucide-react';
 
-const ADDRESS = 'Vicente Guerrero 3, 46170 Totatiche, Jal.';
 const MAPS_SEARCH = 'Vicente+Guerrero+3,+46170+Totatiche,+Jalisco,+Mexico';
 const MAPS_OPEN_URL = `https://www.google.com/maps/search/?api=1&query=${MAPS_SEARCH}`;
 const MAPS_EMBED_URL = `https://maps.google.com/maps?q=${MAPS_SEARCH}&hl=es&z=16&output=embed`;
@@ -8,7 +7,7 @@ const MAPS_EMBED_URL = `https://maps.google.com/maps?q=${MAPS_SEARCH}&hl=es&z=16
 const BUSINESS_HOURS = [
   { day: 'Lunes – Viernes', hours: '11:00 AM – 2:00 PM  ·  4:00 PM – 8:00 PM' },
   { day: 'Sábado', hours: '11:00 AM – 2:00 PM  ·  4:00 PM – 8:00 PM' },
-  { day: 'Domingo', hours: 'Con cita previa' },
+  { day: 'Domingo', hours: 'Descanso' },
 ];
 
 export function Map() {
@@ -52,29 +51,6 @@ export function Map() {
 
           {/* Info cards */}
           <div className="space-y-5">
-            {/* Address */}
-            <div className="bg-nude-50 rounded-2xl p-5 border border-nude-200">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5 text-primary-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-stone-800 mb-1">Dirección</h3>
-                  <p className="text-stone-600 text-sm font-medium">{ADDRESS}</p>
-                  <p className="text-stone-500 text-xs mt-0.5">Totatiche, Jalisco, México</p>
-                  <a
-                    href={MAPS_OPEN_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    <Navigation className="w-3 h-3" />
-                    Cómo llegar
-                  </a>
-                </div>
-              </div>
-            </div>
-
             {/* Hours */}
             <div className="bg-nude-50 rounded-2xl p-5 border border-nude-200">
               <div className="flex items-start gap-4">
@@ -102,7 +78,7 @@ export function Map() {
                   <Instagram className="w-5 h-5 text-primary-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-stone-800 mb-1">Sígueme en redes</h3>
+                  <h3 className="font-semibold text-stone-800 mb-1">Sígueme en redes de trabajo</h3>
                   <p className="text-stone-500 text-sm mb-3">Mándame un mensaje para más info o preguntas.</p>
                   <div className="flex gap-3 flex-wrap">
                     <a
@@ -127,6 +103,39 @@ export function Map() {
                 </div>
               </div>
             </div>
+
+                        <div className="bg-nude-50 rounded-2xl p-5 border border-nude-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Instagram className="w-5 h-5 text-primary-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-stone-800 mb-1">Sígueme en redes personales</h3>
+                  <p className="text-stone-500 text-sm mb-3">Mándame un mensaje para más info o preguntas.</p>
+                  <div className="flex gap-3 flex-wrap">
+                    <a
+                      href="https://www.instagram.com/mayra_quezada_1234/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-semibold px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+                    >
+                      <Instagram className="w-3.5 h-3.5" />
+                      @mayra_quezada_1234
+                    </a>
+                    <a
+                      href="https://www.facebook.com/mayra.quezada.58726"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 bg-blue-600 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-blue-700 transition-colors"
+                    >
+                      <Facebook className="w-3.5 h-3.5" />
+                      Quezada Mayra
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
