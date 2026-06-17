@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, Clock, User, Phone, Mail, ChevronRight, ChevronLeft, CheckCircle, Sparkles, MessageSquare, Search } from 'lucide-react';
+import { CalendarDays, Clock, User, Phone, Mail, ChevronRight, ChevronLeft, CheckCircle, Sparkles, MessageSquare, Search, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Calendar as CalendarPicker } from './Calendar';
 import type { Service, Appointment } from '../types';
+import { notifyClient, notifyAdmin } from '../lib/notifications';
 
 interface BookedSlot {
   appointment_time: string;
@@ -52,6 +53,26 @@ interface BookingProps {
 
 type Step = 'service' | 'datetime' | 'contact' | 'confirm';
 
+// Funciones de validación
+const validateName = (name: string) => {
+  if (!name.trim()) return 'El nombre es requerido';
+  if (name.trim().length < 2) return 'El nombre debe tener al menos 2 caracteres';
+  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(name.trim())) return 'Solo letras y espacios';
+  return '';
+};
+
+const validatePhone = (phone: string) => {
+  if (!phone.trim()) return 'El teléfono es requerido';
+  const clean = phone.replace(/[\s\-()]/g, '');
+  if (!/^\d{10}$/.test(clean)) return 'Teléfono debe tener 10 dígitos (ej: 6671234567)';
+  return '';
+};
+
+const validateEmail = (email: string) => {
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Correo electrónico inválido';
+  return '';
+};
+
 export function Booking({ preselectedService, onSuccess }: BookingProps) {
   const [step, setStep] = useState<Step>('service');
   const [services, setServices] = useState<Service[]>([]);
@@ -61,6 +82,7 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', notes: '' });
+  const [formErrors, setFormErrors] = useState({ name: '', phone: '', email: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -92,7 +114,6 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
       .then(({ data }) => {
         if (data) {
           setBookedSlots(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             data.map((a: any) => ({
               appointment_time: (a.appointment_time as string).slice(0, 5),
               duration_minutes: (Array.isArray(a.services) ? a.services[0] : a.services)?.duration_minutes ?? 60,
@@ -125,14 +146,34 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
     });
   }, [services, search, filterCategory]);
 
+  // Validar campos en tiempo real
+  const handleFieldChange = (field: keyof typeof form, value: string) => {
+    setForm({ ...form, [field]: value });
+    if (field === 'name') setFormErrors({ ...formErrors, name: validateName(value) });
+    if (field === 'phone') setFormErrors({ ...formErrors, phone: validatePhone(value) });
+    if (field === 'email') setFormErrors({ ...formErrors, email: validateEmail(value) });
+  };
+
+  const canProceedToConfirm = () => {
+    const nameError = validateName(form.name);
+    const phoneError = validatePhone(form.phone);
+    const emailError = validateEmail(form.email);
+    setFormErrors({ name: nameError, phone: phoneError, email: emailError });
+    return !nameError && !phoneError && !emailError && form.name && form.phone;
+  };
+
   const handleSubmit = async () => {
     if (!selectedService || !selectedDate || !selectedTime || !form.name || !form.phone) return;
+
+    // Validar antes de enviar
+    if (!canProceedToConfirm()) return;
+
     setSubmitting(true);
     setError('');
 
     const { error: err } = await supabase.from('appointments').insert({
       client_name: form.name.trim(),
-      client_phone: form.phone.trim(),
+      client_phone: form.phone.trim().replace(/[\s\-()]/g, ''),
       client_email: form.email.trim() || null,
       service_id: selectedService.id,
       service_name: selectedService.name,
@@ -163,6 +204,22 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
         icon: '/vite.svg',
       });
     }
+
+    // Enviar notificaciones por WhatsApp (silenciosamente)
+    try {
+      const appointmentData = {
+        client_name: form.name,
+        client_phone: form.phone.trim().replace(/[\s\-()]/g, ''),
+        service_name: selectedService.name,
+        appointment_date: selectedDate,
+        appointment_time: selectedTime,
+      };
+      await notifyClient(appointmentData);
+      await notifyAdmin(appointmentData);
+    } catch (notifError) {
+      // Ignorar errores de notificación (CORS o red)
+      console.warn('Notificación WhatsApp (no crítica)');
+    }
   };
 
   const requestNotificationPermission = () => {
@@ -177,6 +234,7 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
     setSelectedDate('');
     setSelectedTime('');
     setForm({ name: '', phone: '', email: '', notes: '' });
+    setFormErrors({ name: '', phone: '', email: '' });
     setSubmitted(false);
     setError('');
   };
@@ -218,7 +276,6 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
   return (
     <section id="agendar" className="bg-white py-20">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
-        {/* Header */}
         <div className="text-center mb-10">
           <span className="text-primary-500 text-sm font-semibold tracking-widest uppercase">Reservaciones en línea</span>
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-800 mt-2 mb-3">
@@ -227,7 +284,6 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
           <p className="text-stone-500">Elige tu servicio, fecha y hora en pocos pasos.</p>
         </div>
 
-        {/* Step indicator */}
         <div className="flex items-center justify-center mb-8">
           {steps.map((s, i) => {
             const Icon = s.icon;
@@ -237,13 +293,12 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
               <div key={s.id} className="flex items-center">
                 <div className="flex flex-col items-center gap-1">
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
-                      isDone
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${isDone
                         ? 'bg-green-500 text-white'
                         : isActive
-                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-200'
-                        : 'bg-stone-100 text-stone-400'
-                    }`}
+                          ? 'bg-primary-500 text-white shadow-lg shadow-primary-200'
+                          : 'bg-stone-100 text-stone-400'
+                      }`}
                   >
                     {isDone ? <CheckCircle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                   </div>
@@ -260,12 +315,10 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
         </div>
 
         <div className="bg-nude-50 rounded-3xl border border-nude-200 p-6 sm:p-8">
-          {/* Step 1: Service Selection */}
           {step === 'service' && (
             <div>
               <h3 className="font-serif text-xl font-bold text-stone-800 mb-4">¿Qué servicio deseas?</h3>
 
-              {/* Search */}
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                 <input
@@ -277,24 +330,21 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                 />
               </div>
 
-              {/* Category filter */}
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {serviceCategories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setFilterCategory(cat)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                      filterCategory === cat
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${filterCategory === cat
                         ? 'bg-primary-500 text-white'
                         : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                    }`}
+                      }`}
                   >
                     {cat}
                   </button>
                 ))}
               </div>
 
-              {/* Service list */}
               <div className="space-y-2 max-h-72 overflow-y-auto scrollbar-thin pr-1">
                 {filteredServices.length === 0 ? (
                   <p className="text-center text-stone-400 text-sm py-8">No se encontraron servicios.</p>
@@ -303,11 +353,10 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                     <button
                       key={s.id}
                       onClick={() => setSelectedService(s)}
-                      className={`w-full text-left flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 ${
-                        selectedService?.id === s.id
+                      className={`w-full text-left flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 ${selectedService?.id === s.id
                           ? 'border-primary-400 bg-primary-50 shadow-md'
                           : 'border-stone-200 bg-white hover:border-primary-200 hover:bg-pink-50'
-                      }`}
+                        }`}
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-stone-800 text-sm">{s.name}</p>
@@ -331,12 +380,10 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
             </div>
           )}
 
-          {/* Step 2: Date & Time */}
           {step === 'datetime' && (
             <div>
               <h3 className="font-serif text-xl font-bold text-stone-800 mb-4">¿Cuándo te gustaría venir?</h3>
 
-              {/* Selected service reminder */}
               {selectedService && (
                 <div className="flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-xl px-3 py-2 mb-4">
                   <Sparkles className="w-3.5 h-3.5 text-primary-500 shrink-0" />
@@ -345,7 +392,6 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                 </div>
               )}
 
-              {/* Custom Calendar */}
               <div className="mb-5">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
                   <CalendarDays className="w-4 h-4 inline mr-1.5" />Selecciona una fecha
@@ -379,13 +425,12 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                               key={slot}
                               disabled={blocked}
                               onClick={() => setSelectedTime(slot)}
-                              className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${
-                                blocked
+                              className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${blocked
                                   ? 'border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed line-through'
                                   : selectedTime === slot
-                                  ? 'border-primary-500 bg-primary-500 text-white shadow-md'
-                                  : 'border-stone-200 bg-white text-stone-700 hover:border-primary-300 hover:text-primary-600'
-                              }`}
+                                    ? 'border-primary-500 bg-primary-500 text-white shadow-md'
+                                    : 'border-stone-200 bg-white text-stone-700 hover:border-primary-300 hover:text-primary-600'
+                                }`}
                             >
                               {formatTime(slot)}
                             </button>
@@ -401,13 +446,12 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                               key={slot}
                               disabled={blocked}
                               onClick={() => setSelectedTime(slot)}
-                              className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${
-                                blocked
+                              className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${blocked
                                   ? 'border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed line-through'
                                   : selectedTime === slot
-                                  ? 'border-primary-500 bg-primary-500 text-white shadow-md'
-                                  : 'border-stone-200 bg-white text-stone-700 hover:border-primary-300 hover:text-primary-600'
-                              }`}
+                                    ? 'border-primary-500 bg-primary-500 text-white shadow-md'
+                                    : 'border-stone-200 bg-white text-stone-700 hover:border-primary-300 hover:text-primary-600'
+                                }`}
                             >
                               {formatTime(slot)}
                             </button>
@@ -442,7 +486,6 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
             </div>
           )}
 
-          {/* Step 3: Contact Info */}
           {step === 'contact' && (
             <div>
               <h3 className="font-serif text-xl font-bold text-stone-800 mb-5">Tus datos de contacto</h3>
@@ -455,22 +498,36 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                     type="text"
                     placeholder="Tu nombre"
                     value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full border-2 border-stone-200 focus:border-primary-400 rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors bg-white placeholder:text-stone-400"
+                    onChange={e => handleFieldChange('name', e.target.value)}
+                    className={`w-full border-2 ${formErrors.name ? 'border-red-400 focus:border-red-500' : 'border-stone-200 focus:border-primary-400'
+                      } rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors bg-white placeholder:text-stone-400`}
                   />
+                  {formErrors.name && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {formErrors.name}
+                    </p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1.5">
                     <Phone className="w-4 h-4 inline mr-1.5" />Teléfono / WhatsApp *
                   </label>
                   <input
                     type="tel"
-                    placeholder="Ej: 667 123 4567"
+                    placeholder="Ej: 6671234567"
                     value={form.phone}
-                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                    className="w-full border-2 border-stone-200 focus:border-primary-400 rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors bg-white placeholder:text-stone-400"
+                    onChange={e => handleFieldChange('phone', e.target.value)}
+                    className={`w-full border-2 ${formErrors.phone ? 'border-red-400 focus:border-red-500' : 'border-stone-200 focus:border-primary-400'
+                      } rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors bg-white placeholder:text-stone-400`}
                   />
+                  {formErrors.phone && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {formErrors.phone}
+                    </p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1.5">
                     <Mail className="w-4 h-4 inline mr-1.5" />Correo electrónico (opcional)
@@ -479,10 +536,17 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                     type="email"
                     placeholder="tu@correo.com"
                     value={form.email}
-                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    className="w-full border-2 border-stone-200 focus:border-primary-400 rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors bg-white placeholder:text-stone-400"
+                    onChange={e => handleFieldChange('email', e.target.value)}
+                    className={`w-full border-2 ${formErrors.email ? 'border-red-400 focus:border-red-500' : 'border-stone-200 focus:border-primary-400'
+                      } rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors bg-white placeholder:text-stone-400`}
                   />
+                  {formErrors.email && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {formErrors.email}
+                    </p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1.5">
                     <MessageSquare className="w-4 h-4 inline mr-1.5" />Notas adicionales (opcional)
@@ -505,8 +569,10 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
                   <ChevronLeft className="w-4 h-4" /> Atrás
                 </button>
                 <button
-                  disabled={!form.name || !form.phone}
-                  onClick={() => setStep('confirm')}
+                  disabled={!form.name || !form.phone || !!formErrors.name || !!formErrors.phone || !!formErrors.email}
+                  onClick={() => {
+                    if (canProceedToConfirm()) setStep('confirm');
+                  }}
                   className="flex-1 flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-600 disabled:bg-stone-200 disabled:text-stone-400 text-white font-semibold py-3 rounded-full transition-all"
                 >
                   Revisar Cita <ChevronRight className="w-4 h-4" />
@@ -515,7 +581,6 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
             </div>
           )}
 
-          {/* Step 4: Confirm */}
           {step === 'confirm' && (
             <div>
               <h3 className="font-serif text-xl font-bold text-stone-800 mb-5">Confirma tu cita</h3>

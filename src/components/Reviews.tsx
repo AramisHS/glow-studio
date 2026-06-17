@@ -24,11 +24,10 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
           className={onChange ? 'cursor-pointer' : 'cursor-default'}
         >
           <Star
-            className={`w-6 h-6 transition-colors ${
-              star <= (hover || value)
+            className={`w-6 h-6 transition-colors ${star <= (hover || value)
                 ? 'text-gold-500 fill-gold-500'
                 : onChange ? 'text-stone-300 hover:text-gold-300' : 'text-stone-300'
-            }`}
+              }`}
           />
         </button>
       ))}
@@ -71,12 +70,28 @@ interface ReviewModalProps {
 function ReviewModal({ services, onClose, onSubmit }: ReviewModalProps) {
   const [form, setForm] = useState({ name: '', rating: 0, comment: '', service_name: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; rating?: string; comment?: string }>({});
+
+  const validate = () => {
+    const newErrors: { name?: string; rating?: string; comment?: string } = {};
+    if (!form.name.trim() || form.name.trim().length < 2) {
+      newErrors.name = 'Nombre debe tener al menos 2 caracteres';
+    }
+    if (form.rating === 0) {
+      newErrors.rating = 'Selecciona una calificación';
+    }
+    if (!form.comment.trim() || form.comment.trim().length < 5) {
+      newErrors.comment = 'El comentario debe tener al menos 5 caracteres';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.rating || !form.comment) return;
+    if (!validate()) return;
     setSubmitting(true);
-    await onSubmit(form);
+    await onSubmit({ name: form.name.trim(), rating: form.rating, comment: form.comment.trim(), service_name: form.service_name });
     setSubmitting(false);
   };
 
@@ -108,14 +123,16 @@ function ReviewModal({ services, onClose, onSubmit }: ReviewModalProps) {
               placeholder="Tu nombre"
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full border-2 border-stone-200 focus:border-primary-400 rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors placeholder:text-stone-400 text-sm"
+              className={`w-full border-2 ${errors.name ? 'border-red-400' : 'border-stone-200'} focus:border-primary-400 rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors placeholder:text-stone-400 text-sm`}
               required
             />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-2">Calificación *</label>
-            <StarRating value={form.rating} onChange={v => setForm(f => ({ ...f, rating: v }))} />
+            <StarRating value={form.rating} onChange={v => { setForm(f => ({ ...f, rating: v })); if (errors.rating) setErrors({ ...errors, rating: undefined }); }} />
+            {errors.rating && <p className="text-red-500 text-xs mt-1">{errors.rating}</p>}
             {form.rating > 0 && (
               <p className="text-xs text-stone-500 mt-1">
                 {['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'][form.rating]}
@@ -144,9 +161,10 @@ function ReviewModal({ services, onClose, onSubmit }: ReviewModalProps) {
               value={form.comment}
               onChange={e => setForm(f => ({ ...f, comment: e.target.value }))}
               rows={4}
-              className="w-full border-2 border-stone-200 focus:border-primary-400 rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors placeholder:text-stone-400 resize-none text-sm"
+              className={`w-full border-2 ${errors.comment ? 'border-red-400' : 'border-stone-200'} focus:border-primary-400 rounded-xl px-4 py-3 text-stone-800 outline-none transition-colors placeholder:text-stone-400 resize-none text-sm`}
               required
             />
+            {errors.comment && <p className="text-red-500 text-xs mt-1">{errors.comment}</p>}
           </div>
 
           <div className="flex gap-3 pt-1">
@@ -159,7 +177,7 @@ function ReviewModal({ services, onClose, onSubmit }: ReviewModalProps) {
             </button>
             <button
               type="submit"
-              disabled={submitting || !form.name || !form.rating || !form.comment}
+              disabled={submitting}
               className="flex-1 flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-full transition-all text-sm"
             >
               <Send className="w-4 h-4" />
@@ -271,11 +289,10 @@ export function Reviews({ addToast }: ReviewsProps) {
             <button
               key={f.label}
               onClick={() => setTimeFilter(f.days)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                timeFilter === f.days
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${timeFilter === f.days
                   ? 'bg-primary-500 text-white shadow-md'
                   : 'bg-white text-stone-600 border border-stone-200 hover:border-primary-300 hover:text-primary-600'
-              }`}
+                }`}
             >
               {f.label}
             </button>
