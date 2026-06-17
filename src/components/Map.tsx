@@ -1,6 +1,6 @@
 import { Clock, Instagram, Facebook, Phone, MessageCircle, Mail } from 'lucide-react';
 
-const MAPS_SEARCH = 'Vicente+Guerrero+3,+46170+Totatiche,+Jalisco,+Mexico';
+const MAPS_SEARCH = 'Vicente+Guerrero+1,+46170+Totatiche,+Jalisco,+Mexico';
 const MAPS_OPEN_URL = `https://www.google.com/maps/search/?api=1&query=${MAPS_SEARCH}`;
 const MAPS_EMBED_URL = `https://maps.google.com/maps?q=${MAPS_SEARCH}&hl=es&z=16&output=embed`;
 
