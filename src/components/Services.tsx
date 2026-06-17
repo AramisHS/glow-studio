@@ -136,10 +136,10 @@ export function Services({ onBookService }: ServicesProps) {
         <div className="text-center mb-12">
           <span className="text-primary-500 text-sm font-semibold tracking-widest uppercase">Menú de servicios</span>
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-800 mt-2 mb-4">
-            Nuestros Servicios
+            Nuestros servicios
           </h2>
           <p className="text-stone-500 max-w-md mx-auto text-sm">
-            Todos realizados con productos de calidad. Haz clic en <strong>Agendar</strong> para reservar directamente.
+            Todos realizados con productos de calidad.
           </p>
         </div>
 

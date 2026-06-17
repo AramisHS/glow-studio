@@ -266,7 +266,7 @@ export function Reviews({ addToast }: ReviewsProps) {
         <div className="text-center mb-8">
           <span className="text-primary-500 text-sm font-semibold tracking-widest uppercase">Lo que dicen</span>
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-800 mt-2 mb-4">
-            Reseñas de Clientes
+            Reseñas de clientes
           </h2>
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="flex">

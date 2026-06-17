@@ -41,7 +41,7 @@ export function Hero() {
         </h1>
 
         <p className="text-white/80 text-lg sm:text-xl max-w-2xl mx-auto mb-8 font-light animate-fade-in">
-          Uñas acrílicas, Gelish, cortes, depilación, maquillaje y más.
+          Uñas acrílicas, gelish, cortes, depilación, maquillaje y más.
           Reserva tu cita en línea y luce espectacular.
         </p>
 
@@ -52,14 +52,14 @@ export function Hero() {
             className="group flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold px-8 py-4 rounded-full shadow-xl hover:shadow-primary-500/40 transition-all duration-300 hover:-translate-y-1"
           >
             <Calendar className="w-5 h-5" />
-            Agendar Mi Cita
+            Agendar mi cita
           </button>
           <button
             onClick={scrollToServices}
             className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 hover:-translate-y-1"
           >
             <Sparkles className="w-5 h-5" />
-            Ver Servicios
+            Ver servicios
           </button>
         </div>
       </div>

@@ -279,7 +279,7 @@ export function Booking({ preselectedService, onSuccess }: BookingProps) {
         <div className="text-center mb-10">
           <span className="text-primary-500 text-sm font-semibold tracking-widest uppercase">Reservaciones en línea</span>
           <h2 className="font-serif text-4xl md:text-5xl font-bold text-stone-800 mt-2 mb-3">
-            Agenda Tu Cita
+            Agenda tu cita
           </h2>
           <p className="text-stone-500">Elige tu servicio, fecha y hora en pocos pasos.</p>
         </div>

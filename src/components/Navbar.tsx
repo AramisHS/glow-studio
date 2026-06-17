@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const navLinks = [
   { href: '#inicio', label: 'Inicio' },
   { href: '#servicios', label: 'Servicios' },
-  { href: '#agendar', label: 'Agendar Cita' },
+  { href: '#agendar', label: 'Agendar cita' },
   { href: '#resenas', label: 'Reseñas' },
   { href: '#ubicacion', label: 'Ubicación' },
 ];
@@ -14,7 +14,7 @@ const navLinks = [
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, isAdmin, signOut } = useAuth();
+  const { isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

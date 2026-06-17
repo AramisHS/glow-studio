@@ -86,7 +86,7 @@ export function Footer() {
               {[
                 { label: 'Inicio', id: '#inicio' },
                 { label: 'Servicios y Precios', id: '#servicios' },
-                { label: 'Agendar Cita', id: '#agendar' },
+                { label: 'Agendar cita', id: '#agendar' },
                 { label: 'Reseñas', id: '#resenas' },
                 { label: 'Ubicación', id: '#ubicacion' },
               ].map(link => (
