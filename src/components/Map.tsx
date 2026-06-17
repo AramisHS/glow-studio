@@ -1,4 +1,4 @@
-import { Clock, Instagram, Facebook, Phone, MessageCircle, Mail } from 'lucide-react';
+import { Clock, Instagram, Facebook, Phone, MessageCircle } from 'lucide-react';
 
 const MAPS_SEARCH = 'Vicente+Guerrero+1,+46170+Totatiche,+Jalisco,+Mexico';
 const MAPS_OPEN_URL = `https://www.google.com/maps/search/?api=1&query=${MAPS_SEARCH}`;
